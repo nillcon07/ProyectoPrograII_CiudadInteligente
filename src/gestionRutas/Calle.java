@@ -7,6 +7,7 @@ public class Calle {
     private double tiempoEstimado;
     private Interseccion origen;
     private Interseccion destino;
+    private EstadoCalle estadoCalle;
 
     // Constructor
     public Calle(String nombre, double distancia, double tiempoEstimado,
@@ -16,6 +17,7 @@ public class Calle {
         this.tiempoEstimado = tiempoEstimado;
         this.origen = origen;
         this.destino = destino;
+        this.estadoCalle = EstadoCalle.LIBRE; // Por defecto libre
     }
 
     // Getters y Setters
@@ -59,6 +61,14 @@ public class Calle {
         this.destino = destino;
     }
 
+    public EstadoCalle getEstadoCalle() {
+        return estadoCalle;
+    }
+
+    public void setEstadoCalle(EstadoCalle estadoCalle) {
+        this.estadoCalle = estadoCalle;
+    }
+
     @Override
     public String toString() {
         return "Calle{" +
@@ -67,6 +77,7 @@ public class Calle {
                 ", tiempoEstimado=" + tiempoEstimado +
                 ", origen=" + origen +
                 ", destino=" + destino +
+                ", estado=" + estadoCalle +
                 '}';
     }
 }

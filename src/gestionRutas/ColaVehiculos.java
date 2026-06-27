@@ -60,5 +60,16 @@ public class ColaVehiculos {
         return frente.getVehiculo();
     }
 
+    // Cuenta los vehiculos en la cola sin modificarla
+    public int contarElementos() {
+        int contador = 0;
+        NodoVehiculos actual = frente;
+        while (actual != null) {
+            contador++;
+            actual = actual.getSiguiente();
+        }
+        return contador;
+    }
+
 
 }

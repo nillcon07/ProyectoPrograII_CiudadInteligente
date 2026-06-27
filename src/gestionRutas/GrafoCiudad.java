@@ -103,10 +103,27 @@ public class GrafoCiudad {
 
                 // Si el vecino existe, no fue visitado, y se encuentra un camino más corto
                 if (v != -1 && !visitados[v]) {
-                    double nuevaDistancia = distancias[u] + calle.getDistancia(); // O usa calle.getTiempoEstimado() según requieras
+
+                    // Verificar si la calle es transitable
+                    EstadoCalle estado = calle.getEstadoCalle();
+
+                    if (estado == EstadoCalle.CORTADA || estado == EstadoCalle.BLOQUEADA) {
+                        // La calle no es transitable, se omite
+                        actualCalle = actualCalle.getSiguiente();
+                        continue;
+                    }
+
+                    double pesoCalle = calle.getDistancia();
+
+                    // Si esta congestionada se penaliza el costo (doble de distancia)
+                    if (estado == EstadoCalle.CONGESTIONADA) {
+                        pesoCalle *= 2.0;
+                    }
+
+                    double nuevaDistancia = distancias[u] + pesoCalle;
                     if (nuevaDistancia < distancias[v]) {
                         distancias[v] = nuevaDistancia;
-                        callePrevia[v] = calle; // se guarda para construir la ruta
+                        callePrevia[v] = calle;
                     }
                 }
                 actualCalle = actualCalle.getSiguiente();
@@ -137,6 +154,48 @@ public class GrafoCiudad {
 
         return rutaMinima;
     }
+    // Cambia el estado de una calle por nombre
+    public boolean actualizarEstadoCalle(String nombreCalle, EstadoCalle nuevoEstado) {
+        NodoCalle actual = aristas.getPrimero();
+        while (actual != null) {
+            if (actual.getCalle().getNombre().equals(nombreCalle)) {
+                actual.getCalle().setEstadoCalle(nuevoEstado);
+                System.out.println("Estado de calle '" + nombreCalle + "' actualizado a: " + nuevoEstado);
+                return true;
+            }
+            actual = actual.getSiguiente();
+        }
+        System.out.println("No se encontro la calle: " + nombreCalle);
+        return false;
+    }
+
+    // Bloquea todas las calles que llegan a una interseccion (para aislar zona de emergencia)
+    public void bloquearCallesHaciaInterseccion(Interseccion destino) {
+        NodoCalle actual = aristas.getPrimero();
+        while (actual != null) {
+            Calle calle = actual.getCalle();
+            if (calle.getDestino().getId().equals(destino.getId())) {
+                calle.setEstadoCalle(EstadoCalle.BLOQUEADA);
+                System.out.println("Calle bloqueada: " + calle.getNombre());
+            }
+            actual = actual.getSiguiente();
+        }
+    }
+
+    // Libera todas las calles bloqueadas hacia una interseccion (fin de emergencia)
+    public void liberarCallesHaciaInterseccion(Interseccion destino) {
+        NodoCalle actual = aristas.getPrimero();
+        while (actual != null) {
+            Calle calle = actual.getCalle();
+            if (calle.getDestino().getId().equals(destino.getId())
+                    && calle.getEstadoCalle() == EstadoCalle.BLOQUEADA) {
+                calle.setEstadoCalle(EstadoCalle.LIBRE);
+                System.out.println("Calle liberada: " + calle.getNombre());
+            }
+            actual = actual.getSiguiente();
+        }
+    }
+
     public ListaIntersecciones getVertices() {
         return vertices;
     }

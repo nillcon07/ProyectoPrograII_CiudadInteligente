@@ -71,12 +71,14 @@ public class CiudadInteligente {
     public void setCiudad(Ciudad ciudad) {
         this.ciudad = ciudad;
     }
-    public void gestionarEmergencia(String tipo,String ubicacion) 
-    {
+    public void gestionarEmergencia(String tipo, String ubicacion) {
 
-        centralEmergencias.registrarEmergencia(tipo,ubicacion);
+        centralEmergencias.registrarEmergencia(tipo, ubicacion);
 
-        System.out.println("Calculando ruta...");
+        System.out.println("Actualizando estado de calles via camaras...");
+        actualizarEstadoCallesDesdeGrafo();
+
+        System.out.println("Calculando ruta optima (respetando estados de calle)...");
 
         System.out.println("Liberando trafico...");
 
@@ -85,6 +87,15 @@ public class CiudadInteligente {
         System.out.println("Despachando unidad.");
 
         centralEmergencias.atenderEmergencia();
+    }
+
+    // Recorre todas las intersecciones del grafo y dispara la actualizacion de estado via camara
+    private void actualizarEstadoCallesDesdeGrafo() {
+        gestionRutas.NodoInterseccion actual = grafoCiudad.getVertices().getPrimero();
+        while (actual != null) {
+            actual.getInterseccion().actualizarEstadoCalles();
+            actual = actual.getSiguiente();
+        }
     }
 
 
