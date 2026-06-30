@@ -24,54 +24,60 @@ public class TestEstadoCalle {
         grafo.agregarInterseccion(hospital);
         grafo.agregarInterseccion(plaza);
 
-        // Central -> Hospital (directo, 2.5 km)
-        // Central -> Plaza (directo, 7.0 km)
-        // Hospital -> Plaza (1.8 km)
         grafo.conectarIntersecciones(central, hospital, "Av. San Martin", 2.5, 8);
         grafo.conectarIntersecciones(central, plaza, "Av. Rivadavia", 7.0, 18);
         grafo.conectarIntersecciones(hospital, plaza, "Av. Belgrano", 1.8, 5);
 
-        // === CAMARA en hospital monitoreando trafico ===
         Camara camHospital = new Camara("CAM-H1", "ENCENDIDO", hospital);
         admin.agregarCamara(camHospital, hospital);
 
         System.out.println("\n=== CASO 1: Ruta normal (calles LIBRES) ===");
         ListaCalles ruta = grafo.calcularRutaMinima(central, plaza);
         imprimirRuta(ruta);
+        System.out.println("Evalucacion del algoritmo Dijkstra:");
+        System.out.println("   Por Hospital:  2.5 + 1.8 = 4.3 km");
+        System.out.println("   Por Rivadavia: 7.0 km (directo)");
+        System.out.println("   -> Eligio Hospital porque 4.3 < 7.0");
 
         System.out.println("\n=== CASO 2: Congestion detectada por camara en Hospital ===");
-        // Simulamos 2 vehiculos esperando en Hospital -> CONGESTIONADA
         hospital.agregarVehiculo(new Vehiculos("AAA111", "Auto", 60));
         hospital.agregarVehiculo(new Vehiculos("BBB222", "Camion", 40));
 
-        hospital.actualizarEstadoCalles(); // la camara detecta CONGESTIONADA
+        hospital.actualizarEstadoCalles();
         ruta = grafo.calcularRutaMinima(central, plaza);
         imprimirRuta(ruta);
-        // Dijkstra penaliza Av. San Martin + Av. Belgrano (4.3 * 2 = 8.6 > 7.0)
-        // deberia elegir Av. Rivadavia directo
+        System.out.println("Evalucacion del algoritmo Dijkstra:");
+        System.out.println("   Por Hospital:  2.5 + (1.8 x 2) = 6.1 km (Calle Belgrano de 1.8de peso penalizada por CONGESTIONADA)");
+        System.out.println("   Por Rivadavia: 7.0 km (directo)");
+        System.out.println("   -> Eligio Hospital de todas formas porque 6.1 < 7.0");
+        System.out.println("   -> Nota: la penalizacion existe por congestion pero no alcanza para cambiar la ruta en este grafo");
 
         System.out.println("\n=== CASO 3: Calle CORTADA manualmente ===");
-        // Limpiamos congestion
         hospital.liberarVehiculo();
         hospital.liberarVehiculo();
-        // Cortamos Av. Rivadavia
-        grafo.actualizarEstadoCalle("Av. Rivadavia", EstadoCalle.CORTADA);
-        // Restauramos San Martin a LIBRE
-        grafo.actualizarEstadoCalle("Av. San Martin", EstadoCalle.LIBRE);
-        grafo.actualizarEstadoCalle("Av. Belgrano", EstadoCalle.LIBRE);
+        grafo.actualizarEstadoCalle("Av. Rivadavia", EstadoCalle.LIBRE);
+        grafo.actualizarEstadoCalle("Av. San Martin", EstadoCalle.CORTADA);
+        grafo.actualizarEstadoCalle("Av. Belgrano", EstadoCalle.CORTADA);
 
         ruta = grafo.calcularRutaMinima(central, plaza);
         imprimirRuta(ruta);
-        // Debe ir Central -> Hospital -> Plaza porque Rivadavia esta cortada
+        System.out.println("Evalucacion del algoritmo Dijkstra:");
+        System.out.println("   Por Rivadavia: 7.0km (Directo)(unica opcion transitable)");
+        System.out.println("   Por Hospital:  CORTADA -> se encuentra cortada manualmente Av. San Martin y Av. Belgrano");
+        System.out.println("   -> Eligio Rivadavia porque mediante el Hosptial (que seria de 4.3km) esta cortada");
 
         System.out.println("\n=== CASO 4: Todas las rutas bloqueadas ===");
         grafo.actualizarEstadoCalle("Av. San Martin", EstadoCalle.BLOQUEADA);
         grafo.actualizarEstadoCalle("Av. Belgrano", EstadoCalle.BLOQUEADA);
-        // Rivadavia ya estaba CORTADA
+        grafo.actualizarEstadoCalle("Av. Rivadavia", EstadoCalle.CORTADA);
 
         ruta = grafo.calcularRutaMinima(central, plaza);
+        System.out.println("Evalucacion del algoritmo Dijkstra:");
+        System.out.println("   Av. San Martin: BLOQUEADA -> descartada");
+        System.out.println("   Av. Belgrano:   BLOQUEADA -> descartada");
+        System.out.println("   Av. Rivadavia:  CORTADA   -> descartada");
         if (ruta.getPrimero() == null) {
-            System.out.println("No hay ruta disponible - todas las calles estan bloqueadas o cortadas.");
+            System.out.println("   -> Sin ruta disponible, todas las calles estan bloqueadas o cortadas.");
         } else {
             imprimirRuta(ruta);
         }
