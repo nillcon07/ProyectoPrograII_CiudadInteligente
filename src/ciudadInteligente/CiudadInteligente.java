@@ -3,7 +3,11 @@ package ciudadInteligente;
 import centroDeEmergencia.CentralDeEmergencia;
 import ciudad.Ciudad;
 import gestionDispositivos.AdministradorDispositivo;
+import gestionRutas.Calle;
 import gestionRutas.GrafoCiudad;
+import gestionRutas.Interseccion;
+import gestionRutas.ListaCalles;
+import gestionRutas.NodoCalle;
 
 
 public class CiudadInteligente {
@@ -29,67 +33,58 @@ public class CiudadInteligente {
         System.out.println("Sistema iniciado");
     }
 
-    public void generarReporte() 
-    {
+    public void generarReporte() {
         System.out.println("===== REPORTE =====");
         System.out.println("Ciudad: " + ciudad.getNombre());
         System.out.println("Modulo de emergencias: activo");
         centralEmergencias.mostrarCantidadEmergencias();
         System.out.println("Modulo de dispositivos: activo");
-       
     }
 
-    public GrafoCiudad getGrafoCiudad() {
-        return grafoCiudad;
-    }
+    public void gestionarEmergencia(String tipo, Interseccion origen, Interseccion destino) {
 
-    public void setGrafoCiudad(GrafoCiudad grafoCiudad) {
-        this.grafoCiudad = grafoCiudad;
-    }
+        System.out.println("\n>>> EMERGENCIA: " + tipo + " en " + destino.getId());
 
-    public CentralDeEmergencia getCentralEmergencias() {
-        return centralEmergencias;
-    }
+        // 1. Registrar la emergencia
+        centralEmergencias.registrarEmergencia(tipo, destino.getId());
 
-    public void setCentralEmergencias(CentralDeEmergencia centralEmergencias) {
-        this.centralEmergencias = centralEmergencias;
-    }
-
-    public AdministradorDispositivo getAdministradorDeDispositivos() {
-        return administradorDeDispositivos;
-    }
-
-    public void setAdministradorDeDispositivos(
-            AdministradorDispositivo administradorDeDispositivos) {
-        this.administradorDeDispositivos = administradorDeDispositivos;
-    }
-
-    public Ciudad getCiudad() {
-        return ciudad;
-    }
-
-    public void setCiudad(Ciudad ciudad) {
-        this.ciudad = ciudad;
-    }
-    public void gestionarEmergencia(String tipo, String ubicacion) {
-
-        centralEmergencias.registrarEmergencia(tipo, ubicacion);
-
-        System.out.println("Actualizando estado de calles via camaras...");
+        // 2. Actualizar estado de calles via camaras
+        System.out.println("\n[1] Actualizando estado de calles via camaras...");
         actualizarEstadoCallesDesdeGrafo();
 
-        System.out.println("Calculando ruta optima (respetando estados de calle)...");
+        // 3. Calcular ruta optima respetando estados actuales
+        System.out.println("\n[2] Calculando ruta optima...");
+        ListaCalles ruta = grafoCiudad.calcularRutaMinima(origen, destino);
 
-        System.out.println("Liberando trafico...");
+        if (ruta.getPrimero() == null) {
+            System.out.println("No hay ruta disponible hacia " + destino.getId() + ". Emergencia no puede ser atendida.");
+            return;
+        }
 
-        System.out.println("Semaforos en VERDE.");
+        // Imprimir ruta elegida
+        NodoCalle actualCalle = ruta.getPrimero();
+        while (actualCalle != null) {
+            Calle c = actualCalle.getCalle();
+            System.out.println("   " + c.getOrigen().getId() + " -> " + c.getDestino().getId()
+                    + " por " + c.getNombre() + " | " + c.getDistancia() + " km | " + c.getEstadoCalle());
+            actualCalle = actualCalle.getSiguiente();
+        }
 
-        System.out.println("Despachando unidad.");
+        // 4. Bloquear la ruta para que la unidad pase sin obstaculos
+        System.out.println("\n[3] Bloqueando calles de la ruta para paso de emergencia...");
+        grafoCiudad.bloquearRuta(ruta);
 
+        // 5. Despachar unidad
+        System.out.println("\n[4] Despachando unidad de emergencia...");
         centralEmergencias.atenderEmergencia();
+
+        // 6. Liberar calles al finalizar
+        System.out.println("\n[5] Emergencia atendida. Liberando calles...");
+        grafoCiudad.liberarRuta(ruta);
+
+        System.out.println("\n>>> Emergencia finalizada. Trafico normalizado.");
     }
 
-    // Recorre todas las intersecciones del grafo y dispara la actualizacion de estado via camara
     private void actualizarEstadoCallesDesdeGrafo() {
         gestionRutas.NodoInterseccion actual = grafoCiudad.getVertices().getPrimero();
         while (actual != null) {
@@ -98,5 +93,12 @@ public class CiudadInteligente {
         }
     }
 
-
+    public GrafoCiudad getGrafoCiudad() { return grafoCiudad; }
+    public void setGrafoCiudad(GrafoCiudad grafoCiudad) { this.grafoCiudad = grafoCiudad; }
+    public CentralDeEmergencia getCentralEmergencias() { return centralEmergencias; }
+    public void setCentralEmergencias(CentralDeEmergencia centralEmergencias) { this.centralEmergencias = centralEmergencias; }
+    public AdministradorDispositivo getAdministradorDeDispositivos() { return administradorDeDispositivos; }
+    public void setAdministradorDeDispositivos(AdministradorDispositivo administradorDeDispositivos) { this.administradorDeDispositivos = administradorDeDispositivos; }
+    public Ciudad getCiudad() { return ciudad; }
+    public void setCiudad(Ciudad ciudad) { this.ciudad = ciudad; }
 }
