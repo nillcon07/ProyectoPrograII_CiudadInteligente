@@ -196,6 +196,38 @@ public class GrafoCiudad {
         }
     }
 
+    // Busca una interseccion por su id
+    public Interseccion buscarInterseccion(String id) {
+        NodoInterseccion actual = vertices.getPrimero();
+        while (actual != null) {
+            if (actual.getInterseccion().getId().equals(id)) {
+                return actual.getInterseccion();
+            }
+            actual = actual.getSiguiente();
+        }
+        return null;
+    }
+
+    // Bloquea todas las calles de una ruta calculada
+    public void bloquearRuta(ListaCalles ruta) {
+        NodoCalle actual = ruta.getPrimero();
+        while (actual != null) {
+            actual.getCalle().setEstadoCalle(EstadoCalle.BLOQUEADA);
+            System.out.println("Calle bloqueada para emergencia: " + actual.getCalle().getNombre());
+            actual = actual.getSiguiente();
+        }
+    }
+
+    // Libera todas las calles de una ruta una vez terminada la emergencia
+    public void liberarRuta(ListaCalles ruta) {
+        NodoCalle actual = ruta.getPrimero();
+        while (actual != null) {
+            actual.getCalle().setEstadoCalle(EstadoCalle.LIBRE);
+            System.out.println("Calle liberada: " + actual.getCalle().getNombre());
+            actual = actual.getSiguiente();
+        }
+    }
+
     public ListaIntersecciones getVertices() {
         return vertices;
     }
